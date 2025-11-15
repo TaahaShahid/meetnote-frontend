@@ -1,110 +1,67 @@
 "use client";
 
-import { useState, useRef } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { SignInButton, SignUpButton, SignedOut } from "@clerk/nextjs";
 
 export default function Home() {
-  const [recording, setRecording] = useState(false);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
-
-  const startRecording = async () => {
-    try {
-      // SYSTEM AUDIO (tab / system audio)
-      const systemStream = await navigator.mediaDevices.getDisplayMedia({
-        audio: true,
-        video: false,
-      });
-
-      // MICROPHONE AUDIO
-      const micStream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-      });
-
-      // Combine both streams
-      const combinedTracks = [
-        ...systemStream.getAudioTracks(),
-        ...micStream.getAudioTracks(),
-      ];
-
-      const mixedStream = new MediaStream(combinedTracks);
-
-      // Create MediaRecorder
-      const mediaRecorder = new MediaRecorder(mixedStream, {
-        mimeType: "audio/webm",
-      });
-
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-
-      mediaRecorder.onstop = handleStop;
-
-      mediaRecorder.start();
-      setRecording(true);
-
-      console.log("Recording started...");
-    } catch (error) {
-      console.error("Error starting recording:", error);
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.stop();
-      setRecording(false);
-      console.log("Recording stopped.");
-    }
-  };
-
-  const handleStop = async () => {
-    const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-
-    console.log("Audio blob created:", audioBlob);
-
-    // Convert Blob to WAV file-like object
-    const file = new File([audioBlob], "recording.wav", { type: "audio/wav" });
-
-    // Prepare to send to backend
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      // Placeholder API — update later when backend is ready
-      const response = await fetch("https://example.com/api/process_audio", {
-        method: "POST",
-        body: formData,
-      });
-
-      console.log("Uploaded successfully:", response);
-    } catch (err) {
-      console.error("Upload failed:", err);
-    }
-  };
-
   return (
-    <div className="flex flex-col items-center justify-center h-screen">
-      <h1 className="text-3xl mb-4">MeetNote Audio Recorder</h1>
+    <main className="min-h-screen bg-linear-to-b from-white to-blue-50 flex flex-col items-center justify-center px-4">
+      {/* Logo */}
+      <div className="mb-6">
+        <Image
+          src="/MeetNote_logo.jpg"
+          alt="MeetNote Logo"
+          width={120}
+          height={120}
+          className="opacity-90"
+        />
+      </div>
 
-      {!recording ? (
-        <button
-          onClick={startRecording}
-          className="px-6 py-3 bg-green-600 text-white rounded-lg"
-        >
-          Start Recording
-        </button>
-      ) : (
-        <button
-          onClick={stopRecording}
-          className="px-6 py-3 bg-red-600 text-white rounded-lg"
-        >
-          Stop Recording
-        </button>
-      )}
-    </div>
+      {/* Heading */}
+      <h1 className="text-4xl font-bold text-gray-800 text-center">
+        Welcome to <span className="text-blue-600">MeetNote</span>
+      </h1>
+
+      <p className="mt-3 text-gray-600 text-lg">Your Smart Meeting Companion</p>
+
+      {/* Feature Cards */}
+      <div className="flex flex-col md:flex-row gap-6 mt-10">
+        <Link href="/transcript">
+          <div className="w-48 h-40 bg-white shadow-md rounded-2xl flex flex-col items-center justify-center hover:shadow-xl transition cursor-pointer">
+            <div className="bg-blue-100 p-3 rounded-full mb-3">🎙️</div>
+            <p className="font-semibold text-gray-700 text-center">
+              Live Transcription
+            </p>
+          </div>
+        </Link>
+
+        <Link href="/summary">
+          <div className="w-48 h-40 bg-white shadow-md rounded-2xl flex flex-col items-center justify-center hover:shadow-xl transition cursor-pointer">
+            <div className="bg-purple-100 p-3 rounded-full mb-3">✨</div>
+            <p className="font-semibold text-gray-700 text-center">
+              AI Summaries
+            </p>
+          </div>
+        </Link>
+      </div>
+
+      {/* Replace bottom CTAs with Sign In / Sign Up */}
+      <SignedOut>
+        <div className="mt-10 flex gap-4">
+          <SignInButton mode="modal">
+            <button className="px-6 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition shadow-md">
+              Sign In
+            </button>
+          </SignInButton>
+
+          <SignUpButton mode="modal">
+            <button className="px-6 py-3 rounded-xl bg-white text-blue-700 font-semibold border border-blue-600 hover:bg-blue-50 transition shadow-md">
+              Sign Up
+            </button>
+          </SignUpButton>
+        </div>
+      </SignedOut>
+    </main>
   );
 }
