@@ -7,88 +7,44 @@ import { usePathname } from "next/navigation";
 export default function Navbar() {
   const pathname = usePathname();
 
-  const isActive = (href: string) => {
-    if (href === "/") {
-      return pathname === "/";
-    }
-    return pathname.startsWith(href);
-  };
+  const isActive = (href: string) => pathname === href;
 
   return (
-    <header className="w-full bg-linear-to-r from-blue-500 via-indigo-500 to-purple-600 text-white shadow-md">
-      <nav className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
-        {/* Left — Logo */}
+    <header className="w-full bg-white shadow-lg backdrop-blur-sm sticky top-0 z-50">
+      <nav className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4 rounded-b-xl">
+        
+        {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
           <img
-            src="/MeetNote_logo.jpg"
+            src="/MeetNote_logo.png"
             alt="MeetNote Logo"
-            className="w-8 h-8 object-contain"
+            className="w-10 h-10 object-contain"
           />
-          <span className="text-xl font-semibold tracking-wide">MeetNote</span>
+          <span className="text-2xl font-bold text-black tracking-wide">MeetNote</span>
         </Link>
 
-        {/* Center — Links */}
-        <div className="flex items-center gap-8 text-sm font-medium text-gray-600">
-          <Link
-            href="/"
-            className={`pb-1 transition ${
-              isActive("/")
-                ? "text-white border-b-2 border-white"
-                : "hover:text-white/80"
-            }`}
-          >
-            Home
-          </Link>
-
-          <Link
-            href="/extension"
-            className={`pb-1 transition ${
-              isActive("/extension")
-                ? "text-white border-b-2 border-white"
-                : "hover:text-white/80"
-            }`}
-          >
-            Extension Popup
-          </Link>
-
-          <Link
-            href="/transcript"
-            className={`pb-1 transition ${
-              isActive("/transcript")
-                ? "text-white border-b-2 border-white"
-                : "hover:text-white/80"
-            }`}
-          >
-            Transcript Viewer
-          </Link>
-
-          <Link
-            href="/summary"
-            className={`pb-1 transition ${
-              isActive("/summary")
-                ? "text-white border-b-2 border-white"
-                : "hover:text-white/80"
-            }`}
-          >
-            AI Summary
-          </Link>
-
-          <Link
-            href="/dashboard"
-            className={`pb-1 transition ${
-              isActive("/dashboard")
-                ? "text-white border-b-2 border-white"
-                : "hover:text-white/80"
-            }`}
-          >
-            Dashboard
-          </Link>
+        {/* Links */}
+        <div className="flex items-center gap-6 text-black font-bold text-sm">
+          {["/", "/extension", "/transcript", "/summary", "/dashboard"].map(
+            (href, idx) => (
+              <Link
+                key={idx}
+                href={href}
+                className={`pb-1 transition ${
+                  isActive(href) ? "border-b-2 border-black" : "hover:text-gray-700"
+                }`}
+              >
+                {["Home", "Extension", "Transcript", "Summary", "Dashboard"][idx]}
+              </Link>
+            )
+          )}
         </div>
 
-        {/* Right — User */}
+        {/* User */}
         <div>
           <UserButton />
         </div>
+
       </nav>
     </header>
   );
