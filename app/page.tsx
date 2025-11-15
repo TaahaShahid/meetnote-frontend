@@ -6,12 +6,11 @@ import { SignInButton, SignUpButton, SignedOut } from "@clerk/nextjs";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-white via-blue-50 to-blue-100 flex flex-col items-center justify-center px-4 py-10">
-      
+    <main className="min-h-screen bg-linear-to-b from-white via-blue-50 to-blue-100 flex flex-col items-center justify-center px-4 py-10">
       {/* Logo */}
       <div className="mb-8">
         <Image
-          src="/MeetNote_logo.png"
+          src="/new_MeetNote_logo.png"
           alt="MeetNote Logo"
           width={160}
           height={160}
@@ -32,7 +31,9 @@ export default function Home() {
         {/* Live Transcription */}
         <Link href="/transcript">
           <div className="w-56 h-48 bg-gradient-to-tr from-blue-100 to-blue-200 shadow-lg rounded-3xl flex flex-col items-center justify-center transition transform hover:-translate-y-2 hover:shadow-2xl cursor-pointer">
-            <div className="text-3xl mb-4 transition-transform transform hover:scale-110">🎙️</div>
+            <div className="text-3xl mb-4 transition-transform transform hover:scale-110">
+              🎙️
+            </div>
             <p className="font-semibold text-gray-800 text-center text-lg">
               Live Transcription
             </p>
@@ -42,7 +43,9 @@ export default function Home() {
         {/* AI Summaries */}
         <Link href="/summary">
           <div className="w-56 h-48 bg-gradient-to-tr from-purple-100 to-purple-200 shadow-lg rounded-3xl flex flex-col items-center justify-center transition transform hover:-translate-y-2 hover:shadow-2xl cursor-pointer">
-            <div className="text-3xl mb-4 transition-transform transform hover:scale-110">✨</div>
+            <div className="text-3xl mb-4 transition-transform transform hover:scale-110">
+              ✨
+            </div>
             <p className="font-semibold text-gray-800 text-center text-lg">
               AI Summaries
             </p>
@@ -66,7 +69,6 @@ export default function Home() {
           </SignUpButton>
         </div>
       </SignedOut>
-
     </main>
   );
 }
