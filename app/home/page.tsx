@@ -3,6 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { SignInButton, SignUpButton, SignedOut } from "@clerk/nextjs";
+import MicOutlinedIcon from "@mui/icons-material/MicOutlined";
+import InterpreterModeIcon from "@mui/icons-material/InterpreterMode";
+import SummarizeIcon from "@mui/icons-material/Summarize";
 
 export default function Home() {
   return (
@@ -33,7 +36,8 @@ export default function Home() {
           <div className="w-56 h-48 bg-linear-to-tr from-green-100 to-green-200 shadow-lg rounded-3xl flex flex-col items-center justify-center transition transform hover:-translate-y-2 hover:shadow-2xl cursor-pointer">
             <div className="text-3xl mb-4 transition-transform transform hover:scale-110"></div>
             <p className="font-semibold text-gray-800 text-center text-lg">
-              start recording
+              <MicOutlinedIcon fontSize="medium" />
+              Start Recording
             </p>
           </div>
         </Link>
@@ -41,7 +45,7 @@ export default function Home() {
         <Link href="/transcript">
           <div className="w-56 h-48 bg-linear-to-tr from-blue-100 to-blue-200 shadow-lg rounded-3xl flex flex-col items-center justify-center transition transform hover:-translate-y-2 hover:shadow-2xl cursor-pointer">
             <div className="text-3xl mb-4 transition-transform transform hover:scale-110">
-              🎙️
+              <InterpreterModeIcon fontSize="large" />
             </div>
             <p className="font-semibold text-gray-800 text-center text-lg">
               Live Transcription
@@ -53,7 +57,7 @@ export default function Home() {
         <Link href="/summary">
           <div className="w-56 h-48 bg-linear-to-tr from-purple-100 to-purple-200 shadow-lg rounded-3xl flex flex-col items-center justify-center transition transform hover:-translate-y-2 hover:shadow-2xl cursor-pointer">
             <div className="text-3xl mb-4 transition-transform transform hover:scale-110">
-              ✨
+              <SummarizeIcon fontSize="large" />
             </div>
             <p className="font-semibold text-gray-800 text-center text-lg">
               AI Summaries
