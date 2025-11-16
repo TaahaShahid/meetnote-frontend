@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import FileUploadOutlinedIcon from "@mui/icons-material/FileUploadOutlined";
+import MicOutlinedIcon from "@mui/icons-material/MicOutlined";
+import StopCircleOutlinedIcon from "@mui/icons-material/StopCircleOutlined";
 
 export default function ExtensionPopup() {
   const [isRecording, setIsRecording] = useState(false);
@@ -104,9 +107,15 @@ export default function ExtensionPopup() {
           }`}
         >
           {isRecording ? (
-            <>🔴 Recording... {formatTime(time)}</>
+            <>
+              <StopCircleOutlinedIcon fontSize="medium" />
+              Recording... {formatTime(time)}
+            </>
           ) : (
-            <>🎙️ Start Recording</>
+            <>
+              <MicOutlinedIcon fontSize="medium" />
+              Start Recording
+            </>
           )}
         </button>
 
@@ -119,7 +128,8 @@ export default function ExtensionPopup() {
               : "border-dashed border-gray-300 text-gray-600 hover:bg-blue-50"
           }`}
         >
-          📁 Upload Audio File
+          <FileUploadOutlinedIcon fontSize="medium" />
+          Upload Audio File
         </button>
         <input
           ref={fileInputRef}
@@ -132,8 +142,12 @@ export default function ExtensionPopup() {
         {uploadedFile && !isProcessing && !processingComplete && (
           <div className="mt-4 p-4 rounded-xl border border-gray-200 bg-white flex items-center justify-between">
             <div className="truncate">
-              <p className="text-sm font-medium text-gray-800">{uploadedFile.name}</p>
-              <p className="text-xs text-gray-500">{Math.ceil(uploadedFile.size / 1024)} KB</p>
+              <p className="text-sm font-medium text-gray-800">
+                {uploadedFile.name}
+              </p>
+              <p className="text-xs text-gray-500">
+                {Math.ceil(uploadedFile.size / 1024)} KB
+              </p>
             </div>
             <div className="ml-4 flex gap-2">
               <button
@@ -163,7 +177,10 @@ export default function ExtensionPopup() {
 
         {processingComplete && (
           <div className="mt-4 p-4 rounded-xl border border-green-200 bg-green-50 flex items-center justify-center">
-            <Link href="/summary" className="flex items-center gap-2 text-green-600 hover:text-green-700 font-medium">
+            <Link
+              href="/summary"
+              className="flex items-center gap-2 text-green-600 hover:text-green-700 font-medium"
+            >
               View Summary <span className="text-xl">→</span>
             </Link>
           </div>

@@ -11,7 +11,7 @@ export default function Navbar() {
 
   return (
     <header className="w-full bg-white shadow-lg backdrop-blur-sm sticky top-0 z-50">
-      <nav className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4 rounded-b-xl">
+      <nav className="max-w-7xl mx-auto px-6 py-4 rounded-b-xl grid grid-cols-3 items-center">
         {/* Logo */}
         <Link href="/home" className="flex items-center gap-2">
           <img
@@ -25,7 +25,7 @@ export default function Navbar() {
         </Link>
 
         {/* Links */}
-        <div className="flex items-center gap-6 text-black font-bold text-sm">
+        <div className="flex justify-center items-center gap-10 text-black font-bold text-sm">
           {["/home", "/extension", "/transcript", "/summary", "/dashboard"].map(
             (href, idx) => (
               <Link
@@ -48,7 +48,7 @@ export default function Navbar() {
         </div>
 
         {/* User */}
-        <div>
+        <div className="flex justify-end">
           <UserButton />
         </div>
       </nav>
