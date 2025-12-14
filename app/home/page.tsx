@@ -6,82 +6,107 @@ import { SignInButton, SignUpButton, SignedOut } from "@clerk/nextjs";
 import MicOutlinedIcon from "@mui/icons-material/MicOutlined";
 import InterpreterModeIcon from "@mui/icons-material/InterpreterMode";
 import SummarizeIcon from "@mui/icons-material/Summarize";
+import { useEffect, useState } from "react";
+import { Calendar, Video, Plus, LogIn } from "lucide-react";
 
 export default function Home() {
+  const [time, setTime] = useState("");
+  const [date, setDate] = useState("");
+
+  useEffect(() => {
+    const update = () => {
+      const now = new Date();
+      setTime(
+        now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      );
+      setDate(
+        now.toLocaleDateString("en-US", {
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+        })
+      );
+    };
+
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <main className="min-h-screen bg-linear-to-b from-white via-blue-50 to-blue-100 flex flex-col items-center justify-center px-4 py-10">
-      {/* Logo */}
-      <div className="mb-8">
-        <Image
-          src="/new_MeetNote_logo.png"
-          alt="MeetNote Logo"
-          width={160}
-          height={160}
-          className="rounded-2xl shadow-lg"
-        />
-      </div>
+    <div className="h-screen bg-[#262728] text-white">
+      {/* MAIN CONTENT (shifted to make space for sidebar) */}
+      <main className="ml-64 p-10 h-full overflow-auto">
+        {/* Top Banner */}
+        <div
+          className="relative rounded-2xl p-8 mb-8 shadow-lg overflow-hidden bg-cover bg-center min-h-[450px]"
+          style={{ backgroundImage: "url('/home.jpg')" }}
+        >
+          {/* Lighter overlay so the image is more visible */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/20 to-transparent" />
 
-      {/* Heading */}
-      <h1 className="text-4xl md:text-5xl font-bold text-gray-800 text-center">
-        Welcome to <span className="text-blue-600">MeetNote</span>
-      </h1>
-      <p className="mt-3 text-gray-600 text-lg md:text-xl text-center max-w-xl">
-        Your Smart Meeting Companion
-      </p>
-
-      {/* Feature Cards */}
-      <div className="flex flex-col md:flex-row gap-8 mt-10">
-        {/* Live Transcription */}
-        <Link href="/extension">
-          <div className="w-56 h-48 bg-linear-to-tr from-green-100 to-green-200 shadow-lg rounded-3xl flex flex-col items-center justify-center transition transform hover:-translate-y-2 hover:shadow-2xl cursor-pointer">
-            <div className="text-3xl mb-4 transition-transform transform hover:scale-110"></div>
-            <p className="font-semibold text-gray-800 text-center text-lg">
-              <MicOutlinedIcon fontSize="medium" />
-              Start Recording
+          <div className="relative flex flex-col justify-center h-full">
+            <p className="text-gray-300 mb-2 text-sm bg-[#2A2B2F] px-4 py-1 rounded-full w-fit">
+              Upcoming Meeting at: 12:30 PM
             </p>
-          </div>
-        </Link>
-        {/* Live Transcription */}
-        <Link href="/transcript">
-          <div className="w-56 h-48 bg-linear-to-tr from-blue-100 to-blue-200 shadow-lg rounded-3xl flex flex-col items-center justify-center transition transform hover:-translate-y-2 hover:shadow-2xl cursor-pointer">
-            <div className="text-3xl mb-4 transition-transform transform hover:scale-110">
-              <InterpreterModeIcon fontSize="large" />
-            </div>
-            <p className="font-semibold text-gray-800 text-center text-lg">
-              Live Transcription
-            </p>
-          </div>
-        </Link>
 
-        {/* AI Summaries */}
-        <Link href="/summary">
-          <div className="w-56 h-48 bg-linear-to-tr from-purple-100 to-purple-200 shadow-lg rounded-3xl flex flex-col items-center justify-center transition transform hover:-translate-y-2 hover:shadow-2xl cursor-pointer">
-            <div className="text-3xl mb-4 transition-transform transform hover:scale-110">
-              <SummarizeIcon fontSize="large" />
-            </div>
-            <p className="font-semibold text-gray-800 text-center text-lg">
-              AI Summaries
-            </p>
+            <h1 className="text-6xl font-bold">{time}</h1>
+            <p className="mt-2 text-lg text-gray-400">{date}</p>
           </div>
-        </Link>
-      </div>
-
-      {/* Sign In / Sign Up */}
-      <SignedOut>
-        <div className="mt-12 flex flex-col md:flex-row gap-4">
-          <SignInButton mode="modal">
-            <button className="px-8 py-3 rounded-2xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition shadow-lg transform hover:-translate-y-0.5">
-              Sign In
-            </button>
-          </SignInButton>
-
-          <SignUpButton mode="modal">
-            <button className="px-8 py-3 rounded-2xl bg-white text-blue-700 font-semibold border border-blue-600 hover:bg-blue-50 transition shadow-lg transform hover:-translate-y-0.5">
-              Sign Up
-            </button>
-          </SignUpButton>
         </div>
-      </SignedOut>
-    </main>
+
+        {/* Dashboard Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <DashboardCard
+            title="start recording"
+            subtitle="Start an instant meeting"
+            icon={<Plus size={40} />}
+            color="bg-[#FF6B2C]"
+            href="/extension"
+          />
+          <DashboardCard
+            title="Meetings"
+            subtitle="Meeting recordings"
+            icon={<Video size={40} />}
+            color="bg-[#F2B233]"
+            href="/dashboard"
+          />
+          <DashboardCard
+            title="view Action items"
+            subtitle="Plan your meeting"
+            icon={<Calendar size={40} />}
+            color="bg-[#7E3FF2]"
+            href="/summary"
+          />
+        </div>
+      </main>
+    </div>
+  );
+}
+
+function DashboardCard({
+  title,
+  subtitle,
+  icon,
+  color,
+  href,
+}: {
+  title: string;
+  subtitle: string;
+  icon: React.ReactNode;
+  color: string;
+  href: string;
+}) {
+  return (
+    <Link href={href} className="block">
+      <div
+        className={`p-6 rounded-2xl cursor-pointer hover:opacity-90 transition shadow-lg ${color}`}
+      >
+        {icon}
+        <h2 className="mt-4 text-xl font-bold">{title}</h2>
+        <p className="text-sm opacity-90">{subtitle}</p>
+      </div>
+    </Link>
   );
 }
