@@ -1,57 +1,100 @@
 "use client";
 
-import { UserButton } from "@clerk/nextjs";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { SignedOut, SignInButton } from "@clerk/nextjs";
+import CardNav, { CardNavItem } from "./CardNav";
 
 export default function Navbar() {
   const pathname = usePathname();
 
-  const isActive = (href: string) => pathname === href;
+  // Hide navbar on auth pages
+  if (pathname?.startsWith("/sign-in") || pathname?.startsWith("/sign-up")) {
+    return null;
+  }
+
+  const items: CardNavItem[] = [
+    {
+      label: "About",
+      bgColor: "#0B0B14",
+      textColor: "#ffffff",
+      links: [
+        {
+          label: "Company",
+          href: "/about",
+          ariaLabel: "About company",
+        },
+        {
+          label: "Careers",
+          href: "/careers",
+          ariaLabel: "Careers",
+        },
+      ],
+    },
+    {
+      label: "Projects",
+      bgColor: "#160F2E",
+      textColor: "#ffffff",
+      links: [
+        {
+          label: "Featured",
+          href: "/projects",
+          ariaLabel: "Featured projects",
+        },
+        {
+          label: "Case Studies",
+          href: "/case-studies",
+          ariaLabel: "Case studies",
+        },
+      ],
+    },
+    {
+      label: "Contact",
+      bgColor: "#241B3A",
+      textColor: "#ffffff",
+      links: [
+        {
+          label: "Email",
+          href: "/contact",
+          ariaLabel: "Email us",
+        },
+        {
+          label: "Twitter",
+          href: "https://twitter.com",
+          ariaLabel: "Twitter",
+        },
+        {
+          label: "LinkedIn",
+          href: "https://linkedin.com",
+          ariaLabel: "LinkedIn",
+        },
+      ],
+    },
+  ];
 
   return (
-    <header className="w-full bg-white shadow-lg backdrop-blur-sm sticky top-0 z-50">
-      <nav className="max-w-7xl mx-auto px-6 py-4 rounded-b-xl grid grid-cols-3 items-center">
-        {/* Logo */}
-        <Link href="/home" className="flex items-center gap-2">
-          <img
-            src="/new_MeetNote_logo.png"
-            alt="MeetNote Logo"
-            className="w-10 h-10 object-contain"
-          />
-          <span className="text-2xl font-bold text-black tracking-wide">
+    <div className="relative z-50">
+      <CardNav
+        logo="/new_MeetNote_logo.png"
+        logoAlt="MeetNote"
+        brand={
+          <span className="text-lg sm:text-xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent select-none">
             MeetNote
           </span>
-        </Link>
-
-        {/* Links */}
-        <div className="flex justify-center items-center gap-10 text-black font-bold text-sm">
-          {["/home", "/extension", "/transcript", "/summary", "/dashboard"].map(
-            (href, idx) => (
-              <Link
-                key={idx}
-                href={href}
-                className={`pb-1 transition ${
-                  isActive(href)
-                    ? "border-b-2 border-black"
-                    : "hover:text-gray-700"
-                }`}
-              >
-                {
-                  ["Home", "Extension", "Transcript", "Summary", "Dashboard"][
-                    idx
-                  ]
-                }
-              </Link>
-            )
-          )}
-        </div>
-
-        {/* User */}
-        <div className="flex justify-end">
-          <UserButton />
-        </div>
-      </nav>
-    </header>
+        }
+        items={items}
+        baseColor="#ffffff"
+        menuColor="#000000"
+        className="mx-auto"
+        cta={
+          <SignedOut>
+            <SignInButton forceRedirectUrl="/home">
+              <button type="button" className="card-nav-cta-button">
+                Sign in
+              </button>
+            </SignInButton>
+          </SignedOut>
+        }
+      />
+    </div>
   );
 }
