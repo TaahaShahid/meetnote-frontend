@@ -96,7 +96,7 @@ export default function ExtensionPopup() {
   ];
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-blue-50 to-blue-100 flex flex-col items-center py-10 px-4">
+    <div className="min-h-screen bg-linear-to-b  bg-gray-50 flex flex-col items-center py-10 px-4">
       <div className="w-full max-w-md bg-blue-50 rounded-3xl shadow-lg p-6 relative">
         <button
           onClick={toggleRecording}
