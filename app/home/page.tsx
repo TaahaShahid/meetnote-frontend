@@ -1,112 +1,141 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
-import { SignInButton, SignUpButton, SignedOut } from "@clerk/nextjs";
-import MicOutlinedIcon from "@mui/icons-material/MicOutlined";
-import InterpreterModeIcon from "@mui/icons-material/InterpreterMode";
-import SummarizeIcon from "@mui/icons-material/Summarize";
-import { useEffect, useState } from "react";
-import { Calendar, Video, Plus, LogIn } from "lucide-react";
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Search, Mic, Upload, Bot } from "lucide-react";
+
+type Meeting = {
+  id: number;
+  title: string;
+  time: string;
+  duration: string;
+  author: string;
+};
 
 export default function Home() {
-  const [time, setTime] = useState("");
-  const [date, setDate] = useState("");
+  const router = useRouter();
+  const [query, setQuery] = useState("");
 
-  useEffect(() => {
-    const update = () => {
-      const now = new Date();
-      setTime(
-        now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-      );
-      setDate(
-        now.toLocaleDateString("en-US", {
-          weekday: "long",
-          month: "long",
-          day: "numeric",
-          year: "numeric",
-        })
-      );
-    };
+  // Dummy meetings (same structure as Otter UI)
+  const meetings: Meeting[] = [
+    {
+      id: 1,
+      title: "Note",
+      time: "10:42 PM",
+      duration: "10 sec",
+      author: "Taaha Shahid",
+    },
+    {
+      id: 2,
+      title: "Taaha Shahid’s Meeting Notes",
+      time: "2:01 PM",
+      duration: "38 sec",
+      author: "Taaha Shahid",
+    },
+    {
+      id: 3,
+      title: "Note",
+      time: "1:57 PM",
+      duration: "28 sec",
+      author: "Taaha Shahid",
+    },
+  ];
 
-    update();
-    const interval = setInterval(update, 1000);
-    return () => clearInterval(interval);
-  }, []);
+  const filteredMeetings = useMemo(() => {
+    if (!query.trim()) return meetings;
+    return meetings.filter((meeting) =>
+      meeting.title.toLowerCase().includes(query.toLowerCase())
+    );
+  }, [query, meetings]);
 
   return (
-    <div className="h-screen bg-[#262728] text-white">
-      {/* MAIN CONTENT (shifted to make space for sidebar) */}
-      <main className="ml-64 p-10 h-full overflow-auto">
-        {/* Top Banner */}
-        <div
-          className="relative rounded-2xl p-8 mb-8 shadow-lg overflow-hidden bg-cover bg-center min-h-[450px]"
-          style={{ backgroundImage: "url('/home.jpg')" }}
-        >
-          {/* Lighter overlay so the image is more visible */}
-          <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/20 to-transparent" />
+    <div
+      className="
+        relative bg-white min-h-screen
+        ml-0
+        peer-data-[collapsed=false]:ml-64
+        peer-data-[collapsed=true]:ml-20
+        transition-[margin] duration-300
+      "
+    >
+      {/* ───────────────── Sticky Header ───────────────── */}
+      <header className="sticky top-0 z-30 bg-white border-b">
+        <div className="flex items-center justify-between px-6 py-4 gap-4">
+          {/* Search Bar */}
+          <div className="relative w-full max-w-xl">
+            <Search
+              size={18}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Ask or search"
+              className="w-full rounded-full border border-gray-200 pl-10 pr-16 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">
+              Ctrl K
+            </span>
+          </div>
 
-          <div className="relative flex flex-col justify-center h-full">
-            <p className="text-gray-300 mb-2 text-sm bg-[#2A2B2F] px-4 py-1 rounded-full w-fit">
-              Upcoming Meeting at: 12:30 PM
-            </p>
+          {/* Header Actions */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.push("/extension")}
+              className="flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-medium hover:bg-gray-50"
+            >
+              <Upload size={16} />
+              Import
+            </button>
 
-            <h1 className="text-6xl font-bold">{time}</h1>
-            <p className="mt-2 text-lg text-gray-400">{date}</p>
+            <button
+              onClick={() => router.push("/extension")}
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
+            >
+              <Mic size={16} />
+              Record
+            </button>
           </div>
         </div>
+      </header>
 
-        {/* Dashboard Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <DashboardCard
-            title="start recording"
-            subtitle="Start an instant meeting"
-            icon={<Plus size={40} />}
-            color="bg-[#FF6B2C]"
-            href="/extension"
-          />
-          <DashboardCard
-            title="Meetings"
-            subtitle="Meeting recordings"
-            icon={<Video size={40} />}
-            color="bg-[#F2B233]"
-            href="/dashboard"
-          />
-          <DashboardCard
-            title="view Action items"
-            subtitle="Plan your meeting"
-            icon={<Calendar size={40} />}
-            color="bg-[#7E3FF2]"
-            href="/summary"
-          />
+      {/* ───────────────── Main Content ───────────────── */}
+      <main className="px-6 py-6 max-w-4xl">
+        {/* Date Header */}
+        <div className="mb-6">
+          <h2 className="text-sm font-semibold text-gray-500">Today, Dec 17</h2>
+        </div>
+
+        {/* Meetings List */}
+        <div className="space-y-4">
+          {filteredMeetings.map((meeting) => (
+            <div
+              key={meeting.id}
+              onClick={() => router.push("/summary")}
+              className="cursor-pointer rounded-2xl border border-gray-200 p-5 hover:bg-gray-50 transition"
+            >
+              <h3 className="text-base font-semibold text-gray-900">
+                {meeting.title}
+              </h3>
+              <p className="mt-1 text-sm text-gray-500">
+                {meeting.time} · {meeting.duration} · {meeting.author}
+              </p>
+            </div>
+          ))}
+
+          {filteredMeetings.length === 0 && (
+            <p className="text-sm text-gray-400">No meetings found.</p>
+          )}
         </div>
       </main>
-    </div>
-  );
-}
 
-function DashboardCard({
-  title,
-  subtitle,
-  icon,
-  color,
-  href,
-}: {
-  title: string;
-  subtitle: string;
-  icon: React.ReactNode;
-  color: string;
-  href: string;
-}) {
-  return (
-    <Link href={href} className="block">
-      <div
-        className={`p-6 rounded-2xl cursor-pointer hover:opacity-90 transition shadow-lg ${color}`}
+      {/* ───────────────── Chatbot Floating Button ───────────────── */}
+      <button
+        className="fixed right-6 top-1/2 -translate-y-1/2 z-40 flex h-14 w-14 items-center justify-center rounded-full border bg-white shadow-lg hover:bg-gray-50"
+        title="Chatbot (Coming Soon)"
       >
-        {icon}
-        <h2 className="mt-4 text-xl font-bold">{title}</h2>
-        <p className="text-sm opacity-90">{subtitle}</p>
-      </div>
-    </Link>
+        <Bot size={22} className="text-gray-700" />
+      </button>
+    </div>
   );
 }
