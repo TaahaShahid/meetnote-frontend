@@ -48,6 +48,18 @@ export default function Navbar() {
       ],
     },
     {
+      label: "Pricing",
+      bgColor: "#1E293B",
+      textColor: "#ffffff",
+      links: [
+        {
+          label: "Plans",
+          href: "/pricing",
+          ariaLabel: "View pricing plans",
+        },
+      ],
+    },
+    {
       label: "Contact",
       bgColor: "#241B3A",
       textColor: "#ffffff",
