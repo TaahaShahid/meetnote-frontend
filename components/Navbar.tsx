@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { SignedOut, SignInButton } from "@clerk/nextjs";
 import CardNav, { CardNavItem } from "./CardNav";
+import Link from "next/link";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -89,9 +90,11 @@ export default function Navbar() {
         logo="/new_MeetNote_logo.png"
         logoAlt="MeetNote"
         brand={
-          <span className="text-lg sm:text-xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent select-none">
-            MeetNote
-          </span>
+          <Link href="/" className="block">
+            <span className="text-lg sm:text-xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent select-none">
+              MeetNote
+            </span>
+          </Link>
         }
         items={items}
         baseColor="#ffffff"

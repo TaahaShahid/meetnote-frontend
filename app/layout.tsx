@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider, SignedIn, SignedOut } from "@clerk/nextjs";
-import Navbar from "@/components/Navbar";
+import SignedOutShell from "@/components/SignedOutShell";
 import Sidebar from "@/components/Sidebar";
 
 const geistSans = Geist({
@@ -30,13 +30,20 @@ export default function RootLayout({
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
           <SignedOut>
-            <Navbar />
+            <SignedOutShell>{children}</SignedOutShell>
           </SignedOut>
 
           <SignedIn>
             <Sidebar />
+            <div
+              className={
+                "ml-0 min-h-screen transition-[margin] duration-300 " +
+                "peer-data-[collapsed=false]:ml-64 peer-data-[collapsed=true]:ml-20"
+              }
+            >
+              {children}
+            </div>
           </SignedIn>
-          {children}
         </body>
       </html>
     </ClerkProvider>
