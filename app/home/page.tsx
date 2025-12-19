@@ -49,15 +49,7 @@ export default function Home() {
   }, [query, meetings]);
 
   return (
-    <div
-      className="
-        relative bg-white min-h-screen
-        ml-0
-        peer-data-[collapsed=false]:ml-64
-        peer-data-[collapsed=true]:ml-20
-        transition-[margin] duration-300
-      "
-    >
+    <div className="relative flex-1 bg-white">
       {/* ───────────────── Sticky Header ───────────────── */}
       <header className="sticky top-0 z-30 bg-white border-b">
         <div className="flex items-center justify-between px-6 py-4 gap-4">

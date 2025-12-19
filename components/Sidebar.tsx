@@ -11,6 +11,7 @@ import {
   FileText,
   Layers,
   Settings,
+  Star,
 } from "lucide-react";
 import { UserButton } from "@clerk/nextjs";
 
@@ -102,6 +103,12 @@ export default function Sidebar() {
               icon={<Settings size={20} />}
               text="Settings"
               href="/settings"
+            />
+
+            <SidebarItem
+              icon={<Star size={20} />}
+              text="Upgrade"
+              href="/pricing"
             />
 
             <li>
