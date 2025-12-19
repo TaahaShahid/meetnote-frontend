@@ -80,12 +80,12 @@ export default function Sidebar() {
             <SidebarItem icon={<Home size={20} />} text="Home" href="/home" />
             <SidebarItem
               icon={<SquareKanban size={20} />}
-              text="Extension"
+              text="Record"
               href="/extension"
             />
             <SidebarItem
               icon={<FileText size={20} />}
-              text="Summary"
+              text="Meetings"
               href="/summary"
             />
             <SidebarItem
