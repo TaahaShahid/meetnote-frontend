@@ -9,6 +9,7 @@ export async function createUser(user: any) {
     const newUser = await User.create(user);
     return JSON.parse(JSON.stringify(newUser));
   } catch (error) {
+    console.error("createUser error:", error);
     throw new Error("Failed to create a new user");
   }
 }
