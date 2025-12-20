@@ -12,11 +12,11 @@ const UserSchema = new Schema({
     required: true,
     unique: true,
   },
-  username: {
-    type: String,
-    unique: true,
-    sparse: true,
-  },
+  // username: {
+  //   type: String,
+  //   unique: true,
+  //   sparse: true,
+  // },
   photo: {
     type: String,
     required: true,
