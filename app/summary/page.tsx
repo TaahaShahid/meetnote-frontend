@@ -39,6 +39,10 @@ export default function SummaryPage() {
       const raw = window.sessionStorage.getItem("meetnote-last-summary");
       if (!raw) return;
       const parsed = JSON.parse(raw) as SummaryPayload;
+
+      // Debug: see exactly what was stored by the extension page
+      console.log("[MeetNote] Loaded summary from storage:", parsed);
+
       setData(parsed);
       setExpanded(true);
     } catch (error) {

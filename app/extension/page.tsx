@@ -207,6 +207,9 @@ export default function ExtensionPopup() {
 
       const data = await res.json();
 
+      // Debug: inspect full backend response shape in the browser console
+      console.log("[MeetNote] Raw /process response:", data);
+
       // Pick only the pieces of the response we care about for the UI
       const summaryPayload = {
         filename: (data as any).filename ?? uploadedFile.name,
