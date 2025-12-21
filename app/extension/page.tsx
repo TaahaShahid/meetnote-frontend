@@ -8,6 +8,67 @@ import StopCircleOutlinedIcon from "@mui/icons-material/StopCircleOutlined";
 
 const API_BASE = "http://localhost:8000";
 
+// Utility to convert AudioBuffer to WAV Blob
+const audioBufferToWav = (buffer: AudioBuffer) => {
+  const numOfChan = buffer.numberOfChannels;
+  const length = buffer.length * numOfChan * 2 + 44;
+  const bufferArray = new ArrayBuffer(length);
+  const view = new DataView(bufferArray);
+
+  const writeString = (view: DataView, offset: number, str: string) => {
+    for (let i = 0; i < str.length; i++) {
+      view.setUint8(offset + i, str.charCodeAt(i));
+    }
+  };
+
+  let offset = 0;
+
+  writeString(view, offset, "RIFF");
+  offset += 4;
+  view.setUint32(offset, length - 8, true);
+  offset += 4;
+  writeString(view, offset, "WAVE");
+  offset += 4;
+  writeString(view, offset, "fmt ");
+  offset += 4;
+  view.setUint32(offset, 16, true);
+  offset += 4;
+  view.setUint16(offset, 1, true);
+  offset += 2; // PCM
+  view.setUint16(offset, numOfChan, true);
+  offset += 2;
+  view.setUint32(offset, buffer.sampleRate, true);
+  offset += 4;
+  view.setUint32(offset, buffer.sampleRate * 2 * numOfChan, true);
+  offset += 4;
+  view.setUint16(offset, numOfChan * 2, true);
+  offset += 2;
+  view.setUint16(offset, 16, true);
+  offset += 2;
+  writeString(view, offset, "data");
+  offset += 4;
+  view.setUint32(offset, length - offset - 4, true);
+  offset += 4;
+
+  const interleaved = new Float32Array(buffer.length * numOfChan);
+  for (let channel = 0; channel < numOfChan; channel++) {
+    const channelData = buffer.getChannelData(channel);
+    for (let i = 0; i < channelData.length; i++) {
+      interleaved[i * numOfChan + channel] = channelData[i];
+    }
+  }
+
+  let pos = offset;
+  for (let i = 0; i < interleaved.length; i++) {
+    let sample = Math.max(-1, Math.min(1, interleaved[i]));
+    sample = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+    view.setInt16(pos, sample, true);
+    pos += 2;
+  }
+
+  return new Blob([view], { type: "audio/wav" });
+};
+
 export default function ExtensionPopup() {
   const [isRecording, setIsRecording] = useState(false);
   const [time, setTime] = useState(0);
@@ -24,9 +85,7 @@ export default function ExtensionPopup() {
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | undefined;
     if (isRecording) {
-      interval = setInterval(() => {
-        setTime((prev) => prev + 1);
-      }, 1000);
+      interval = setInterval(() => setTime((prev) => prev + 1), 1000);
     }
     return () => {
       if (interval) clearInterval(interval);
@@ -52,23 +111,24 @@ export default function ExtensionPopup() {
       audioChunksRef.current = [];
 
       mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
+        if (event.data.size > 0) audioChunksRef.current.push(event.data);
       };
 
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(audioChunksRef.current, {
-          type: "audio/webm",
-        });
+      mediaRecorder.onstop = async () => {
+        // Convert Blob to WAV
+        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        const arrayBuffer = await blob.arrayBuffer();
 
-        const fileName = `meetnote_recording_${recordingCountRef.current}.webm`;
+        const audioCtx = new (window.AudioContext ||
+          (window as any).webkitAudioContext)();
+        const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+
+        const wavBlob = audioBufferToWav(audioBuffer);
+
+        const fileName = `meetnote_recording_${recordingCountRef.current}.wav`;
         recordingCountRef.current += 1;
 
-        const file = new File([blob], fileName, {
-          type: "audio/webm",
-        });
-
+        const file = new File([wavBlob], fileName, { type: "audio/wav" });
         setUploadedFile(file);
 
         stream.getTracks().forEach((track) => track.stop());
@@ -89,31 +149,22 @@ export default function ExtensionPopup() {
     setTime(0);
   };
 
-  const toggleRecording = () => {
-    if (isRecording) {
-      stopRecording();
-    } else {
-      startRecording();
-    }
-  };
+  const toggleRecording = () =>
+    isRecording ? stopRecording() : startRecording();
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const lower = file.name.toLowerCase();
     const valid =
       file.type.startsWith("audio/") ||
       lower.endsWith(".mp3") ||
-      lower.endsWith(".mp4") ||
-      lower.endsWith(".webm");
-
+      lower.endsWith(".wav");
     if (!valid) {
       alert("Please upload a valid audio file");
       if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
-
     setUploadedFile(file);
   };
 
@@ -125,9 +176,7 @@ export default function ExtensionPopup() {
   };
 
   const triggerFileInput = () => {
-    if (!uploadedFile && fileInputRef.current) {
-      fileInputRef.current.click();
-    }
+    if (!uploadedFile && fileInputRef.current) fileInputRef.current.click();
   };
 
   const handleProcessFile = async () => {
@@ -151,7 +200,6 @@ export default function ExtensionPopup() {
         method: "POST",
         body: formData,
       });
-
       if (!res.ok) {
         const err = await res.json();
         throw new Error(err.detail || "Processing failed");
@@ -251,7 +299,6 @@ export default function ExtensionPopup() {
           </div>
         )}
 
-        {/* Loading spinner */}
         {isProcessing && (
           <div className="mt-4 p-4 bg-white border rounded-xl flex justify-center">
             <div className="flex flex-col items-center gap-3">
@@ -261,14 +308,12 @@ export default function ExtensionPopup() {
           </div>
         )}
 
-        {/* Temporary backend response */}
         {apiResponse && !isProcessing && (
           <div className="mt-4 p-4 bg-white border rounded-xl text-sm overflow-auto max-h-60">
             <pre>{JSON.stringify(apiResponse, null, 2)}</pre>
           </div>
         )}
 
-        {/* Processing complete confirmation */}
         {processingComplete && (
           <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-xl text-center">
             <Link href="/summary" className="text-green-600 font-medium">
