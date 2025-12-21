@@ -206,7 +206,29 @@ export default function ExtensionPopup() {
       }
 
       const data = await res.json();
-      setApiResponse(data);
+
+      // Pick only the pieces of the response we care about for the UI
+      const summaryPayload = {
+        filename: (data as any).filename ?? uploadedFile.name,
+        transcript: (data as any).transcript,
+        summary: (data as any).summary,
+        keywords: (data as any).keywords,
+        action_items: (data as any).action_items,
+      };
+
+      // Persist latest summary so the /summary page can render it
+      try {
+        if (typeof window !== "undefined") {
+          window.sessionStorage.setItem(
+            "meetnote-last-summary",
+            JSON.stringify(summaryPayload)
+          );
+        }
+      } catch {
+        // Ignore storage errors – UI will still work for the current session
+      }
+
+      setApiResponse(summaryPayload);
       setProcessingComplete(true);
     } catch (err: any) {
       alert(err.message || "Something went wrong");
@@ -308,16 +330,17 @@ export default function ExtensionPopup() {
           </div>
         )}
 
-        {apiResponse && !isProcessing && (
-          <div className="mt-4 p-4 bg-white border rounded-xl text-sm overflow-auto max-h-60">
-            <pre>{JSON.stringify(apiResponse, null, 2)}</pre>
-          </div>
-        )}
-
-        {processingComplete && (
-          <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-xl text-center">
-            <Link href="/summary" className="text-green-600 font-medium">
-              View Summary →
+        {processingComplete && !isProcessing && (
+          <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-xl text-center transition-opacity animate-in fade-in">
+            <p className="text-sm text-green-700 mb-3">
+              Your meeting has been processed. View the structured summary in your dashboard.
+            </p>
+            <Link
+              href="/summary"
+              className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium shadow hover:bg-green-700 transition"
+            >
+              View Summary
+              <span className="ml-2">→</span>
             </Link>
           </div>
         )}
