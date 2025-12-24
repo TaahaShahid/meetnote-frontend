@@ -6,34 +6,91 @@ import FileUploadOutlinedIcon from "@mui/icons-material/FileUploadOutlined";
 import MicOutlinedIcon from "@mui/icons-material/MicOutlined";
 import StopCircleOutlinedIcon from "@mui/icons-material/StopCircleOutlined";
 
+const API_BASE = "http://localhost:8000";
+
+// Utility to convert AudioBuffer to WAV Blob
+const audioBufferToWav = (buffer: AudioBuffer) => {
+  const numOfChan = buffer.numberOfChannels;
+  const length = buffer.length * numOfChan * 2 + 44;
+  const bufferArray = new ArrayBuffer(length);
+  const view = new DataView(bufferArray);
+
+  const writeString = (view: DataView, offset: number, str: string) => {
+    for (let i = 0; i < str.length; i++) {
+      view.setUint8(offset + i, str.charCodeAt(i));
+    }
+  };
+
+  let offset = 0;
+
+  writeString(view, offset, "RIFF");
+  offset += 4;
+  view.setUint32(offset, length - 8, true);
+  offset += 4;
+  writeString(view, offset, "WAVE");
+  offset += 4;
+  writeString(view, offset, "fmt ");
+  offset += 4;
+  view.setUint32(offset, 16, true);
+  offset += 4;
+  view.setUint16(offset, 1, true);
+  offset += 2; // PCM
+  view.setUint16(offset, numOfChan, true);
+  offset += 2;
+  view.setUint32(offset, buffer.sampleRate, true);
+  offset += 4;
+  view.setUint32(offset, buffer.sampleRate * 2 * numOfChan, true);
+  offset += 4;
+  view.setUint16(offset, numOfChan * 2, true);
+  offset += 2;
+  view.setUint16(offset, 16, true);
+  offset += 2;
+  writeString(view, offset, "data");
+  offset += 4;
+  view.setUint32(offset, length - offset - 4, true);
+  offset += 4;
+
+  const interleaved = new Float32Array(buffer.length * numOfChan);
+  for (let channel = 0; channel < numOfChan; channel++) {
+    const channelData = buffer.getChannelData(channel);
+    for (let i = 0; i < channelData.length; i++) {
+      interleaved[i * numOfChan + channel] = channelData[i];
+    }
+  }
+
+  let pos = offset;
+  for (let i = 0; i < interleaved.length; i++) {
+    let sample = Math.max(-1, Math.min(1, interleaved[i]));
+    sample = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+    view.setInt16(pos, sample, true);
+    pos += 2;
+  }
+
+  return new Blob([view], { type: "audio/wav" });
+};
+
 export default function ExtensionPopup() {
   const [isRecording, setIsRecording] = useState(false);
   const [time, setTime] = useState(0);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingComplete, setProcessingComplete] = useState(false);
+  const [apiResponse, setApiResponse] = useState<any>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingCountRef = useRef(1);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | undefined;
     if (isRecording) {
-      interval = setInterval(() => {
-        setTime((prev) => prev + 1);
-      }, 1000);
+      interval = setInterval(() => setTime((prev) => prev + 1), 1000);
     }
     return () => {
       if (interval) clearInterval(interval);
     };
   }, [isRecording]);
-
-  const toggleRecording = () => {
-    if (isRecording) {
-      setIsRecording(false);
-      setTime(0);
-    } else {
-      setIsRecording(true);
-    }
-  };
 
   const formatTime = (seconds: number) => {
     const hrs = Math.floor(seconds / 3600);
@@ -45,17 +102,66 @@ export default function ExtensionPopup() {
     )}:${String(secs).padStart(2, "0")}`;
   };
 
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) audioChunksRef.current.push(event.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        // Convert Blob to WAV
+        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        const arrayBuffer = await blob.arrayBuffer();
+
+        const audioCtx = new (window.AudioContext ||
+          (window as any).webkitAudioContext)();
+        const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+
+        const wavBlob = audioBufferToWav(audioBuffer);
+
+        const fileName = `meetnote_recording_${recordingCountRef.current}.wav`;
+        recordingCountRef.current += 1;
+
+        const file = new File([wavBlob], fileName, { type: "audio/wav" });
+        setUploadedFile(file);
+
+        stream.getTracks().forEach((track) => track.stop());
+        audioChunksRef.current = [];
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setTime(0);
+    } catch (err) {
+      alert("Microphone access is required to record audio");
+    }
+  };
+
+  const stopRecording = () => {
+    mediaRecorderRef.current?.stop();
+    setIsRecording(false);
+    setTime(0);
+  };
+
+  const toggleRecording = () =>
+    isRecording ? stopRecording() : startRecording();
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const lower = file.name.toLowerCase();
     const valid =
-      file.type === "audio/mpeg" ||
-      file.type === "video/mp4" ||
+      file.type.startsWith("audio/") ||
       lower.endsWith(".mp3") ||
-      lower.endsWith(".mp4");
+      lower.endsWith(".wav");
     if (!valid) {
-      alert("Please upload only MP3 or MP4 files.");
+      alert("Please upload a valid audio file");
       if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
@@ -64,21 +170,74 @@ export default function ExtensionPopup() {
 
   const handleDeleteFile = () => {
     setUploadedFile(null);
+    setProcessingComplete(false);
+    setApiResponse(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const triggerFileInput = () => {
-    if (!uploadedFile && fileInputRef.current) {
-      fileInputRef.current.click();
-    }
+    if (!uploadedFile && fileInputRef.current) fileInputRef.current.click();
   };
 
-  const handleProcessFile = () => {
+  const handleProcessFile = async () => {
+    if (!uploadedFile) return;
+
     setIsProcessing(true);
-    setTimeout(() => {
-      setIsProcessing(false);
+    setProcessingComplete(false);
+    setApiResponse(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", uploadedFile);
+      formData.append("language", "en");
+      formData.append("max_summary_length", "150");
+      formData.append("min_summary_length", "40");
+      formData.append("num_keywords", "10");
+      formData.append("summary_temperature", "0.3");
+      formData.append("include_metadata", "true");
+
+      const res = await fetch(`${API_BASE}/process`, {
+        method: "POST",
+        body: formData,
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.detail || "Processing failed");
+      }
+
+      const data = await res.json();
+
+      // Debug: inspect full backend response shape in the browser console
+      console.log("[MeetNote] Raw /process response:", data);
+
+      // Pick only the pieces of the response we care about for the UI
+      const summaryPayload = {
+        filename: (data as any).filename ?? uploadedFile.name,
+        transcript: (data as any).transcript,
+        summary: (data as any).summary,
+        keywords: (data as any).keywords,
+        action_items: (data as any).action_items,
+      };
+
+      // Persist latest summary so the /summary page can render it
+      try {
+        if (typeof window !== "undefined") {
+          window.sessionStorage.setItem(
+            "meetnote-last-summary",
+            JSON.stringify(summaryPayload)
+          );
+        }
+      } catch {
+        // Ignore storage errors – UI will still work for the current session
+      }
+
+      setApiResponse(summaryPayload);
       setProcessingComplete(true);
-    }, 5000);
+    } catch (err: any) {
+      alert(err.message || "Something went wrong");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const meetings = [
@@ -96,24 +255,24 @@ export default function ExtensionPopup() {
   ];
 
   return (
-    <div className="min-h-screen bg-linear-to-b  bg-gray-50 flex flex-col items-center py-10 px-4">
-      <div className="w-full max-w-md bg-blue-50 rounded-3xl shadow-lg p-6 relative">
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center py-10 px-4">
+      <div className="w-full max-w-md bg-blue-50 rounded-3xl shadow-lg p-6">
         <button
           onClick={toggleRecording}
-          className={`w-full mt-6 py-4 rounded-xl font-semibold flex items-center justify-center gap-2 shadow-lg hover:shadow-2xl transform hover:-translate-y-1 transition ${
+          className={`w-full mt-6 py-4 rounded-xl font-semibold flex items-center justify-center gap-2 shadow-lg ${
             isRecording
-              ? "bg-red-500 hover:bg-red-600 text-white"
-              : "bg-linear-to-r from-blue-500 to-purple-500 text-white"
+              ? "bg-red-500 text-white"
+              : "bg-gradient-to-r from-blue-500 to-purple-500 text-white"
           }`}
         >
           {isRecording ? (
             <>
-              <StopCircleOutlinedIcon fontSize="medium" />
-              Recording... {formatTime(time)}
+              <StopCircleOutlinedIcon />
+              Recording {formatTime(time)}
             </>
           ) : (
             <>
-              <MicOutlinedIcon fontSize="medium" />
+              <MicOutlinedIcon />
               Start Recording
             </>
           )}
@@ -124,41 +283,40 @@ export default function ExtensionPopup() {
           disabled={!!uploadedFile}
           className={`w-full mt-4 py-3 rounded-xl flex items-center justify-center gap-2 border ${
             uploadedFile
-              ? "border-gray-300 text-gray-400 cursor-not-allowed bg-gray-100"
-              : "border-dashed border-gray-300 text-gray-600 hover:bg-blue-50"
+              ? "border-gray-300 text-gray-400 bg-gray-100 cursor-not-allowed"
+              : "border-dashed border-gray-300 text-gray-600"
           }`}
         >
-          <FileUploadOutlinedIcon fontSize="medium" />
+          <FileUploadOutlinedIcon />
           Upload Audio File
         </button>
+
         <input
           ref={fileInputRef}
           type="file"
-          accept=".mp3, .mp4, audio/mpeg, video/mp4"
+          accept="audio/*"
           onChange={handleFileUpload}
           className="hidden"
         />
 
         {uploadedFile && !isProcessing && !processingComplete && (
-          <div className="mt-4 p-4 rounded-xl border border-gray-200 bg-white flex items-center justify-between">
+          <div className="mt-4 p-4 rounded-xl bg-white border flex justify-between items-center">
             <div className="truncate">
-              <p className="text-sm font-medium text-gray-800">
-                {uploadedFile.name}
-              </p>
+              <p className="text-sm font-medium">{uploadedFile.name}</p>
               <p className="text-xs text-gray-500">
                 {Math.ceil(uploadedFile.size / 1024)} KB
               </p>
             </div>
-            <div className="ml-4 flex gap-2">
+            <div className="flex gap-2">
               <button
                 onClick={handleDeleteFile}
-                className="px-3 py-1 rounded-lg text-sm bg-red-50 text-red-600 hover:bg-red-100 border border-red-200"
+                className="px-3 py-1 text-sm bg-red-50 text-red-600 rounded-lg"
               >
                 Delete
               </button>
               <button
                 onClick={handleProcessFile}
-                className="px-3 py-1 rounded-lg text-sm bg-green-50 text-green-600 hover:bg-green-100 border border-green-200 font-medium"
+                className="px-3 py-1 text-sm bg-green-50 text-green-600 rounded-lg"
               >
                 Upload
               </button>
@@ -167,21 +325,25 @@ export default function ExtensionPopup() {
         )}
 
         {isProcessing && (
-          <div className="mt-4 p-4 rounded-xl border border-gray-200 bg-white flex items-center justify-center">
+          <div className="mt-4 p-4 bg-white border rounded-xl flex justify-center">
             <div className="flex flex-col items-center gap-3">
               <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-              <p className="text-sm text-gray-600">Processing...</p>
+              <p className="text-sm">Processing...</p>
             </div>
           </div>
         )}
 
-        {processingComplete && (
-          <div className="mt-4 p-4 rounded-xl border border-green-200 bg-green-50 flex items-center justify-center">
+        {processingComplete && !isProcessing && (
+          <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-xl text-center transition-opacity animate-in fade-in">
+            <p className="text-sm text-green-700 mb-3">
+              Your meeting has been processed. View the structured summary in your dashboard.
+            </p>
             <Link
               href="/summary"
-              className="flex items-center gap-2 text-green-600 hover:text-green-700 font-medium"
+              className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium shadow hover:bg-green-700 transition"
             >
-              View Summary <span className="text-xl">→</span>
+              View Summary
+              <span className="ml-2">→</span>
             </Link>
           </div>
         )}
